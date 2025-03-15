@@ -39,7 +39,7 @@ docker run q-estimation
 - **docker push**:
   - 用於將 Docker 映像上傳到 Docker 註冊中心（例如 Docker Hub、Amazon ECR、Google Container Registry 等）。
   - 在使用 `docker push` 之前，您需要先登錄到 Docker 註冊中心。您可以使用 `docker login` 指令進行登錄。
-  - 基本語法：`docker push <映像名稱>:<標籤>`。例如，`docker push my-image:latest`。
+  - 基本語法：`docker push <映像名稱>:<標籤>`。例如，`docker push q-estimation:latest`。
   - 映像名稱通常由註冊中心 URL、使用者名稱和映像名稱組成。例如，`docker push docker.io/myusername/my-image:latest`。
   - 如果沒有指定標籤，則預設使用 `latest` 標籤。
 - **docker pull**:
