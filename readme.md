@@ -1,92 +1,100 @@
-## 文件說明
+# Quantum Neural Network for Cybersecurity Analysis
 
-- **Ian_Hu_Masterbate_On_7A.M_Daily_Schedule_Estimation_Network.qasm**: 這個文件包含了量子電路的 QASM 代碼，用於估計某人在特定時間段內的行為。
-- **for_ibm.qasm**: 這個文件包含了量子電路的 QASM 代碼，用於技術解決方案的評估。
-- **main.py**: 這個文件包含了量子神經網絡的實現，用於訓練和測試量子電路。
-- **requirements.txt**: 這個文件列出了專案所需的 Python 依賴項。
+## 📌 專案說明
 
-## 如何使用
+本專案使用量子計算與量子神經網絡（Quantum Neural Network, QNN）技術，分析並預測網路安全攻擊模式，尤其專注於識別零日（Zero-day）攻擊行為。
 
-1. **安裝依賴項**:
-   使用以下命令安裝專案所需的 Python 依賴項：
+## 📂 專案結構
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+| 文件名稱                          | 說明                                                            |
+| --------------------------------- | --------------------------------------------------------------- |
+| `Zero_Day_Attack_Prediction.qasm` | main.py 生成量子電路版本                                        |
+| `for_ibm.qasm`                    | 適用於 IBM Quantum 服務的 QASM 格式電路，可用 api 做 cron job。 |
+| `main.py`                         | 量子神經網絡的核心程式碼，用於訓練與預測攻擊模式。              |
+| `next_phase.py`                   | 下一階段開發計畫的程式碼草稿，包含進階功能規劃。                |
+| `requirements.txt`                | 專案 Python 依賴套件列表。                                      |
 
-2. **運行主程序**:
-   使用以下命令運行主程序：
+## 🚀 快速開始
 
-   ```bash
-   python main.py
-   ```
+### 環境建置
 
-3. **查看結果**:
-   程序會輸出當前台北時間、測試預測結果以及最終參數。最終的量子電路表示會保存到 `Ian_Hu_Masterbate_On_7A.M_Daily_Schedule_Estimation_Network.qasm` 文件中。
+```bash
+pip install -r requirements.txt
+```
 
-## 量子電路說明
+### 運行程式
 
-量子電路由以下幾個部分組成：
+```bash
+python main.py
+```
 
-1. **初始狀態準備**: 使用旋轉門（rx 和 ry）來創建初始量子態。
-2. **次要旋轉**: 使用 ry 旋轉門來創建複雜的量子態。
-3. **纏結創建**: 使用 CNOT 門來創建量子纏結。
-4. **最終狀態修改**: 使用 X 門來翻轉第一個量子比特的狀態。
-5. **測量**: 測量所有量子比特並將結果存儲在經典寄存器中。
+程式運行後，會在終端機輸出：
 
-## main.py 功能
+- 目前台北時間
+- 預測的攻擊模式結果
+- 訓練後最終參數
 
-`main.py` 文件包含了量子神經網絡的實現，用於訓練和測試量子電路。以下是其主要功能：
+同時，量子電路會保存到以下 QASM 文件：
 
-1. **輸入特徵 (Features)**
+- `Zero_Day_Attack_Prediction.qasm`
 
-   - 攻擊時間 (timestamp)
-   - 來源 IP (source_ip)
-   - 攻擊類型 (attack_type，例如 SQL Injection, DDoS 等)
-   - 是否被攔截 (blocked)
-   - 攔截方式 (blocking_method)
+## 🔮 量子電路設計
 
-2. **量子電路設計**
+此量子電路旨在透過量子狀態編碼安全攻擊的特徵，進而識別攻擊模式：
 
-- 使用 5 量子位 來編碼零日攻擊的相關特徵。
-- RX 閘: 用來將攻擊特徵編碼到量子態中。
-- RY 參數化旋轉閘: 這些參數將經過訓練來最小化損失函數。
-- CNOT 閘: 用於糾纏量子位，讓特徵之間可以有交互作用。
+- **量子位元數**：5 量子位元 (Qubits)
+- **量子閘設計**：
+  - **初始狀態編碼**：`RX` 閘，編碼攻擊特徵。
+  - **參數化旋轉**：`RY` 閘，透過訓練學習參數。
+  - **量子糾纏**：`CNOT` 閘，建立特徵交互作用。
+  - **狀態反轉**：`X` 閘，調整最終狀態以利測量。
+- **測量策略**：
+  - 測量第 0 個量子位元，根據其量子態機率判定攻擊是否屬於零日攻擊：
+    - 若 `P(|1⟩)` 接近 `1`，則可能為零日攻擊。
+    - 若 `P(|1⟩)` 接近 `0`，則為已知攻擊。
 
-3. **預測輸出**
+## 📋 使用特徵說明
 
-- 計算第 0 個量子位的測量機率，若 P(|1⟩) 接近 1，則攻擊可能是零日攻擊。
-- 若 P(|1⟩) 接近 0，則攻擊可能是已知攻擊。
+| 特徵名稱   | 說明            | 範例                |
+| ---------- | --------------- | ------------------- |
+| 攻擊時間   | timestamp       | `2025-03-14T03:05Z` |
+| 來源 IP    | source_ip       | `238.54.8.212`      |
+| 攻擊類型   | attack_type     | `SQL Injection`     |
+| 是否被攔截 | blocked         | `true` 或 `false`   |
+| 攔截方式   | blocking_method | `IP Blacklisting`   |
 
-4. **保存最終量子電路**:
-   - 將最終的量子電路表示保存到 `Ian_Hu_Masterbate_On_7A.M_Daily_Schedule_Estimation_Network.qasm` 文件中。
+## 🧩 下一階段規劃 (`next_phase.py`)
 
-## 參考資料
+### 📌 特徵擴充（7 維度）
 
-- [Qiskit Documentation](https://qiskit.org/documentation/)
-- [QASM 2.0 Specification](https://arxiv.org/abs/1707.03429)
+更豐富的特徵向量，提供精準的零日攻擊偵測：
 
-## next_phase.py
+- 攻擊類型（SQL Injection, DDoS, XSS 等）
+- 來源 IP
+- 時間戳記
+- 地理位置
+- 攻擊模式（Flooding, Sniffing 等）
+- 歷史發生頻率
+- 受害端類型（API, Web, Network 等）
+- gate 修正
 
-擴展點
+### 📌 參數持久化儲存
 
-    擴增輸入特徵
-        增加至 7 維特徵，以更貼近攻擊模式：
-            攻擊類型 (SQL Injection, DDoS, XSS, etc.)
-            來源 IP
-            時間戳
-            地理位置
-            攻擊模式 (Flooding, Sniffing, etc.)
-            歷史發生頻率
-            受害端類型 (API, Web, Network)
+- 採用 JSON 格式儲存訓練完成的模型參數。
+- 程式啟動時自動讀取歷史參數，加速訓練流程。
 
-    持久化訓練參數
-        使用 JSON 儲存 訓練好的參數。
-        每次啟動時，會嘗試讀取歷史參數，否則隨機初始化。
+### 📌 量子糾纏與非線性互動增強
 
-    量子糾纏與參數化控制
-        增加 CNOT + 旋轉門，使量子位間產生非線性互動，增強學習能力。
+- 使用 `CNOT` 與額外的旋轉門 (`RY`、`RZ`) 強化量子糾纏效果，提升模型的非線性分類能力。
 
-    真實場景應用
-        訓練資料可替換為 現實的零日攻擊數據。
-        預測結果可用於 防火牆、入侵檢測系統 (IDS) 決策。
+### 📌 真實攻擊場景應用
+
+- 使用真實的網路攻擊數據替換現有模擬資料。
+- 模型輸出可整合至現有的防火牆及入侵偵測系統（IDS）中，協助安全管理決策。
+
+## 📖 參考資料
+
+- [Qiskit 官方文件](https://qiskit.org/documentation/)
+- [QASM 2.0 規範](https://arxiv.org/abs/1707.03429)
+
+© 2025 Quantum Cybersecurity Analysis Project
