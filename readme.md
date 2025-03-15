@@ -1,5 +1,8 @@
 # Quantum Neural Network for Cybersecurity Analysis
 
+## demo:
+- https://youtu.be/GAqObPqVGdQ
+
 ## 📌 專案說明
 
 本專案使用量子計算與量子神經網絡（Quantum Neural Network, QNN）技術，分析並預測網路安全攻擊模式，尤其專注於識別零日（Zero-day）攻擊行為。
