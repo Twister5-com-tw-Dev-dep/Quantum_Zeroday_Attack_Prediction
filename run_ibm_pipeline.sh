@@ -2,20 +2,19 @@
 
 set -e
 
-QASM_FILE="for_ibm.qasm"
-JOB_ID_FILE="job_id.txt"
+echo "🔧 [1/4] 產生量子電路 QASM..."
+python generate_qasm.py --qubits 5 --output for_ibm.qasm
 
-echo "🚀 [1/4] 提交 QASM 至 IBM Quantum..."
-python submit_ibm_job.py $QASM_FILE
+echo "🚀 [2/4] 提交至 IBM Quantum..."
+python submit_ibm_job.py for_ibm.qasm
 
-echo "🕒 [2/4] 等待 30 秒讓任務開始執行..."
-sleep 30
+JOB_ID=$(cat job_id.txt)
+echo "📦 [3/4] 等待並拉取結果 (Job ID: $JOB_ID)..."
+sleep 20  # 等待 IBM 系統處理
 
-JOB_ID=$(cat $JOB_ID_FILE)
-echo "🔍 Job ID: $JOB_ID"
+python fetch_result.py "$JOB_ID"
 
-echo "📥 [3/4] 下載執行結果..."
-python fetch_result.py $JOB_ID
-
-echo "📈 [4/4] 自動攻擊判斷中..."
+echo "🧠 [4/4] 分析 qubit[0] 結果..."
 python auto_decision.py
+
+echo "✅ 全流程執行完畢"

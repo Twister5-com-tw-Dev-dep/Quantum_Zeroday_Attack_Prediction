@@ -1,44 +1,40 @@
-name: Daily IBM QASM Pipeline
+name: IBM Quantum Pipeline
 
 on:
   schedule:
-    - cron: "0 3 * * *" # 每天 UTC 03:00 執行
+    - cron: "0 4 * * *" # 每天 UTC 04:00 執行（台灣中午 12:00）
   workflow_dispatch:
 
 jobs:
-  ibm-pipeline:
+  quantum-job:
     runs-on: ubuntu-latest
+    env:
+      IBMQ_TOKEN: ${{ secrets.IBMQ_TOKEN }}
 
     steps:
-      - name: Checkout repo
+      - name: 🧾 Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: 3.10
 
-      - name: Install dependencies
+      - name: 📦 安裝依賴
         run: |
           python -m pip install --upgrade pip
-          pip install qiskit qiskit-ibm-provider numpy
+          pip install -r requirements.txt
 
-      - name: Generate QASM
-        run: python generate_qasm.py
-
-      - name: Submit job to IBM Quantum
-        env:
-          IBMQ_TOKEN: ${{ secrets.IBMQ_TOKEN }}
+      - name: 🧪 執行完整流程
         run: |
-          echo "import os; os.environ['IBMQ_TOKEN'] = '${{ secrets.IBMQ_TOKEN }}'" >> patch_token.py
+          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_token.py
           cat submit_ibm_job.py >> patch_token.py
+          python generate_qasm.py --qubits 5 --output for_ibm.qasm
           python patch_token.py for_ibm.qasm
-
-      - name: Wait 45s for job to run
-        run: sleep 45
-
-      - name: Fetch result
-        run: python fetch_result.py $(cat job_id.txt)
-
-      - name: Analyze result
-        run: python auto_decision.py
+          JOB_ID=$(cat job_id.txt)
+          echo "sleeping to wait for result..."
+          sleep 20
+          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_fetch.py
+          cat fetch_result.py >> patch_fetch.py
+          python patch_fetch.py "$JOB_ID"
+          python auto_decision.py

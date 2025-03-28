@@ -10,6 +10,12 @@ def fetch_result(job_id, token, backend_name="ibmq_qasm_simulator"):
     job = backend.retrieve_job(job_id)
 
     print(f"📦 Job status: {job.status()}")
+
+    # 若 job 還在 queue，中止流程
+    if job.status().name != "DONE":
+        print("⏳ Job 尚未完成，請稍後再試")
+        return
+
     result = job.result()
     counts = result.get_counts()
 
