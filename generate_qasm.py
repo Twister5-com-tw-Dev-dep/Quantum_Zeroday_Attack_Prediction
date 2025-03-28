@@ -1,7 +1,14 @@
 from qiskit import QuantumCircuit
 import numpy as np
-import datetime
 import os
+
+# --- 相容新版與舊版 Qiskit 的 QASM 匯出 ---
+try:
+    from qiskit.qasm2 import dumps  # For Qiskit Terra >= 0.25
+except ImportError:
+    # fallback to .qasm() method for older versions
+    def dumps(circuit):
+        return circuit.qasm()
 
 
 def generate_qasm(save_path="for_ibm.qasm"):
@@ -26,11 +33,11 @@ def generate_qasm(save_path="for_ibm.qasm"):
 
     qc.measure_all()
 
-    qasm_str = qc.qasm()
+    qasm_str = dumps(qc)
     with open(save_path, "w") as f:
         f.write(qasm_str)
-
     print(f"✅ QASM generated and saved to {save_path}")
+
 
 if __name__ == "__main__":
     generate_qasm()
