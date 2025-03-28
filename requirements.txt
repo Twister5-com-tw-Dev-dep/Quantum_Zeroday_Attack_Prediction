@@ -1,11 +1,8 @@
-# Core quantum computing requirements
-qiskit==0.46.0
-qiskit-terra>=0.25.1
-qiskit-aer>=0.13.1
-
-# IBM Quantum Runtime support
+# Core quantum computing requirements (Qiskit 1.x)
+qiskit==1.0.2
+qiskit-aer==0.14.1  # 或 0.14.2，需配合 Qiskit 1.x
 qiskit-ibm-provider>=0.11.0
-qiskit-ibm-runtime>=0.21.0  # 支援 SamplerV2 與 /sessions endpoint
+qiskit-ibm-runtime>=0.21.0  # ✅ 支援 SamplerV2 + sessions endpoint
 
 # Machine learning and data processing
 numpy>=1.21.0
