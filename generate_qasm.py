@@ -41,3 +41,8 @@ def generate_qasm(save_path="for_ibm.qasm"):
 
 if __name__ == "__main__":
     generate_qasm()
+# python generate_qasm.py --qubits 7 --output my_custom.qasm
+
+#--qubits：設定 qubit 數量（預設為 5）
+
+#--output：指定輸出的 .qasm 檔案名稱（預設為 for_ibm.qasm）
