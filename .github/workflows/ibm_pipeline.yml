@@ -51,10 +51,12 @@ jobs:
           python auto_decision.py > summary.txt
           cat summary.txt
 
-      - name: 💾 Upload artifacts (JSON + Summary)
+      - name: 💾 Upload artifacts (JSON + Summary + Markdown + CSV)
         uses: actions/upload-artifact@v4
         with:
           name: ibm-analysis-results
           path: |
             ibm_result.json
             summary.txt
+            summary.md
+            bitstring_stats.csv
