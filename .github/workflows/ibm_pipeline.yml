@@ -1,14 +1,13 @@
-name: IBM Quantum Pipeline
+name: IBM Runtime Quantum Pipeline
 
 on:
   schedule:
-    - cron: "0 4 * * *" # 每天台灣中午 12 點 (UTC+8)
+    - cron: "0 4 * * *" # 每天 UTC 04:00（台北中午 12:00）
   workflow_dispatch:
 
 jobs:
-  quantum-analysis:
+  runtime-analysis:
     runs-on: ubuntu-latest
-
     env:
       IBMQ_TOKEN: ${{ secrets.IBMQ_TOKEN }}
 
@@ -24,37 +23,36 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install qiskit qiskit-ibm-provider qiskit-ibm-runtime
           pip install -r requirements.txt
 
-      - name: 🔧 Generate QASM file
-        run: |
-          python generate_qasm.py --qubits 5 --output for_ibm.qasm
+      - name: 🔧 Generate QASM
+        run: python generate_qasm.py --qubits 5 --output for_ibm.qasm
 
-      - name: 🚀 Submit job to IBM Quantum
+      - name: 🚀 Submit with Runtime
         run: |
-          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_token.py
-          cat submit_ibm_job.py >> patch_token.py
-          python patch_token.py for_ibm.qasm
+          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_submit_runtime.py
+          cat submit_ibm_job_runtime.py >> patch_submit_runtime.py
+          python patch_submit_runtime.py for_ibm.qasm
 
-      - name: ⏳ Wait for job execution
+      - name: ⏳ Wait for result
         run: sleep 30
 
-      - name: 📥 Fetch result from IBM
+      - name: 📥 Fetch result via Runtime
         run: |
           JOB_ID=$(cat job_id.txt)
-          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_fetch.py
-          cat fetch_result.py >> patch_fetch.py
-          python patch_fetch.py "$JOB_ID"
+          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_fetch_runtime.py
+          cat fetch_result_runtime.py >> patch_fetch_runtime.py
+          python patch_fetch_runtime.py "$JOB_ID"
 
-      - name: 🧠 Analyze results and save summary
+      - name: 🧠 Analyze result & Save summary
         run: |
           python auto_decision.py > summary.txt
-          cat summary.txt
 
-      - name: 💾 Upload artifacts (JSON + Summary + Markdown + CSV)
+      - name: 💾 Upload analysis artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ibm-analysis-results
+          name: runtime-analysis-results
           path: |
             ibm_result.json
             summary.txt

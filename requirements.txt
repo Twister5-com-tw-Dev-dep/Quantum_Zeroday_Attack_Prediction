@@ -1,7 +1,11 @@
 # Core quantum computing requirements
 qiskit==0.44.1
-qiskit-aer>=0.12.2
 qiskit-terra>=0.25.1
+qiskit-aer>=0.12.2
+
+# IBM Quantum Runtime support
+qiskit-ibm-provider>=0.7.0
+qiskit-ibm-runtime>=0.10.0  # ✅ 提交與拉取 job via Runtime Primitives
 
 # Machine learning and data processing
 numpy>=1.21.0
@@ -23,6 +27,7 @@ flake8>=4.0.0
 pytz>=2023.3
 python-dateutil>=2.8.2
 tqdm>=4.65.0
+csv
 
 # Optional - Quantum optimization
 qiskit-optimization>=0.5.0
@@ -30,10 +35,6 @@ qiskit-optimization>=0.5.0
 # Type checking
 mypy>=1.0.0
 typing-extensions>=4.0.0
-
-# IBM Quantum Provider
-qiskit-ibm-provider>=0.7.0  # 最新版需搭配 terra >= 0.25
-
 
 # Documentation
 sphinx>=4.0.0
