@@ -26,8 +26,16 @@ jobs:
           pip install qiskit qiskit-ibm-provider qiskit-ibm-runtime
           pip install -r requirements.txt
 
-      - name: 🔧 Generate QASM
-        run: python generate_qasm.py --qubits 5 --output for_ibm.qasm
+      - name: 📦 安裝 Qiskit 依賴
+        run: |
+          pip install --upgrade pip
+          pip install qiskit==0.44.1
+          pip install qiskit-ibm-provider>=0.7.0
+          pip install qiskit-ibm-runtime>=0.10.0
+          pip install -r requirements.txt
+
+      - name: 🤖 Train QNN & Generate QASM
+        run: python generate_qasm.py --qubits 5 --samples 10 --output for_ibm.qasm
 
       - name: 🚀 Submit with Runtime
         run: |
