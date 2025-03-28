@@ -1,127 +1,102 @@
-from qiskit import QuantumCircuit
-import qiskit
-from qiskit.quantum_info import Statevector
 import numpy as np
-import json
-# debug github action block
-print("✅ Qiskit path:", qiskit.__file__)
-print("✅ Qiskit version:", qiskit.__version__)
-print("✅ Qiskit path:", qiskit.__file__)
-#
+import argparse
+import os
+
+try:
+    from qiskit.qasm2 import dumps  # Qiskit Terra >= 0.25
+except ImportError:
+    def dumps(circuit):
+        return circuit.qasm()
+
+from qiskit import QuantumCircuit
+from qiskit.quantum_info import Statevector
 
 
-class TrainableQNN:
+class QNNQASMGenerator:
     def __init__(self, num_qubits=5):
         self.num_qubits = num_qubits
-        self.parameters = np.random.rand(num_qubits) * 2 * np.pi  # 可訓練參數（RY）
-        self.input_data = None  # 儲存 RX 特徵
+        self.params = np.random.rand(num_qubits) * 2 * np.pi
 
     def create_circuit(self, input_data):
-        self.input_data = input_data
         qc = QuantumCircuit(self.num_qubits)
 
-        # 特徵輸入（RX）
+        # RX: feature encoding
         for i, x in enumerate(input_data):
             qc.rx(x, i)
 
-        # 可訓練參數（RY）
-        for i, theta in enumerate(self.parameters):
+        # RY: trainable params
+        for i, theta in enumerate(self.params):
             qc.ry(theta, i)
 
-        # 糾纏（環狀）
+        # Entanglement ring
         for i in range(self.num_qubits - 1):
             qc.cx(i, i + 1)
         qc.cx(self.num_qubits - 1, 0)
 
-        qc.measure_all()
         return qc
 
-    def simulate_probability(self, circuit, qubit_idx=0):
+    def simulate_probability(self, circuit, qubit_index=0):
         state = Statevector.from_instruction(circuit)
-        prob = state.probabilities([qubit_idx])
-        return prob[1]
+        prob = state.probabilities([qubit_index])
+        return prob[1]  # P(|1⟩)
 
-    def train(self, dataset, labels, epochs=100, lr=0.1):
+    def _estimate_gradient(self, input_data, label, epsilon=0.01):
+        grads = np.zeros_like(self.params)
+
+        for i in range(len(self.params)):
+            orig = self.params[i]
+
+            self.params[i] = orig + epsilon
+            plus_prob = self.simulate_probability(self.create_circuit(input_data))
+
+            self.params[i] = orig - epsilon
+            minus_prob = self.simulate_probability(self.create_circuit(input_data))
+
+            grads[i] = (plus_prob - minus_prob) / (2 * epsilon)
+            self.params[i] = orig
+
+        return grads
+
+    def train(self, X, y, epochs=100, lr=0.1):
         for epoch in range(epochs):
             loss_total = 0
-            for x, y in zip(dataset, labels):
-                self.input_data = x
-                gradient = self._estimate_gradient(x, y)
-                self.parameters -= lr * gradient
-
-                prob = self.simulate_probability(self.create_circuit(x), 0)
-                loss = (prob - y) ** 2
+            for xi, yi in zip(X, y):
+                prob = self.simulate_probability(self.create_circuit(xi))
+                loss = (prob - yi) ** 2
                 loss_total += loss
 
+                gradient = self._estimate_gradient(xi, yi)
+                self.params -= lr * gradient
+
             if epoch % 10 == 0:
-                print(f"Epoch {epoch} - Avg Loss: {loss_total / len(dataset):.4f}")
+                print(f"Epoch {epoch}, Loss: {loss_total / len(X):.4f}")
 
-    def _estimate_gradient(self, x, y, eps=0.01):
-        grad = np.zeros_like(self.parameters)
-        for i in range(len(self.parameters)):
-            plus = self.parameters.copy()
-            minus = self.parameters.copy()
-            plus[i] += eps
-            minus[i] -= eps
-
-            self.parameters = plus
-            prob_plus = self.simulate_probability(self.create_circuit(x), 0)
-
-            self.parameters = minus
-            prob_minus = self.simulate_probability(self.create_circuit(x), 0)
-
-            grad[i] = (prob_plus - prob_minus) / (2 * eps)
-
-        self.parameters = np.clip(self.parameters, 0, 2 * np.pi)
-        return grad
-
-    def save_qasm(self, filename="for_ibm.qasm"):
-        if self.input_data is None:
-            raise ValueError("⚠️ 尚未設定 input_data，請先呼叫 create_circuit(input_data)")
-
-        qc = self.create_circuit(self.input_data)
-        try:
-            from qiskit.qasm2 import dumps
-            qasm_str = dumps(qc)
-        except ImportError:
-            qasm_str = qc.qasm()
-
-        with open(filename, "w") as f:
+    def export_qasm(self, input_data, save_path="for_ibm.qasm"):
+        qc = self.create_circuit(input_data)
+        qc.measure_all()  # Only added for QASM output, not simulation
+        qasm_str = dumps(qc)
+        with open(save_path, "w") as f:
             f.write(qasm_str)
-        print(f"✅ 儲存 QASM 至 {filename}")
+        print(f"✅ QASM exported to: {save_path}")
+
+
+def generate_synthetic_data(samples=10, num_qubits=5):
+    X = np.random.rand(samples, num_qubits) * 2 * np.pi
+    y = np.random.randint(0, 2, size=samples)
+    return X, y
 
 
 if __name__ == "__main__":
-    np.random.seed(42)
-
-    qnn = TrainableQNN(num_qubits=5)
-
-    # 模擬資料集（例如 10 筆樣本）
-    X = np.random.rand(10, 5) * 2 * np.pi
-    y = np.random.randint(0, 2, size=10)
-
-    qnn.train(X, y, epochs=50)
-
-    # 將最後一筆 input_data 的電路儲存
-    qnn.create_circuit(X[-1])
-    qnn.save_qasm("for_ibm.qasm")
-
-    with open("trained_parameters.json", "w") as f:
-        json.dump(qnn.parameters.tolist(), f)
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Train QNN and export QASM")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--qubits", type=int, default=5)
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--output", type=str, default="for_ibm.qasm")
-
     args = parser.parse_args()
 
-    model = TrainableQNN(num_qubits=args.qubits)
-    X = np.random.rand(args.samples, args.qubits) * 2 * np.pi
-    y = np.random.randint(0, 2, args.samples)
-    model.train(X, y, epochs=50)
-    model.create_circuit(X[-1])
-    model.save_qasm(args.output)
+    X, y = generate_synthetic_data(args.samples, args.qubits)
+
+    qnn = QNNQASMGenerator(num_qubits=args.qubits)
+    qnn.train(X, y, epochs=50)
+
+    test_input = X[0]  # pick one for inference and QASM output
+    qnn.export_qasm(test_input, save_path=args.output)
