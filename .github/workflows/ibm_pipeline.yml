@@ -23,15 +23,14 @@ jobs:
       - name: 03 🧹 Clean up Qiskit installs
         run: |
           pip uninstall -y qiskit qiskit-terra qiskit-aer qiskit-ibm-provider qiskit-ibm-runtime || true
-          pip install --no-cache-dir qiskit==0.44.1
-          pip install --no-cache-dir qiskit-aer>=0.12.2
-          pip install --no-cache-dir qiskit-ibm-provider>=0.7.0
-          pip install --no-cache-dir qiskit-ibm-runtime>=0.10.0
+          pip install --upgrade pip
+          pip install --no-cache-dir qiskit==0.44.1 qiskit-aer qiskit-ibm-provider qiskit-ibm-runtime
           pip install -r requirements.txt
 
       - name: 04 🔍 Check Qiskit path
         run: |
           python -c "import qiskit; print('✅ Qiskit path:', qiskit.__file__)"
+          python -c "import qiskit; print('✅ Qiskit path:', qiskit.__file__); print('✅ Qiskit version:', qiskit.__version__)"
 
       - name: 05 🤖 Generate QASM from ML-driven QNN
         run: python generate_qasm.py --qubits 5 --samples 10 --output for_ibm.qasm
