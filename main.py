@@ -1,4 +1,4 @@
-// ... existing code ...
+
 from qiskit import QuantumCircuit, transpile
 from qiskit.quantum_info import Statevector
 import numpy as np
