@@ -27,7 +27,7 @@ flake8>=4.0.0
 pytz>=2023.3
 python-dateutil>=2.8.2
 tqdm>=4.65.0
-csv
+
 
 # Optional - Quantum optimization
 qiskit-optimization>=0.5.0
