@@ -20,6 +20,14 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: 🧹 移除殘留 Qiskit & 強制重新安裝乾淨版本
+        run: |
+          pip uninstall -y qiskit qiskit-terra qiskit-aer qiskit-ibm-provider qiskit-ibm-runtime || true
+          pip install --no-cache-dir qiskit==0.44.1
+          pip install --no-cache-dir qiskit-aer>=0.12.2
+          pip install --no-cache-dir qiskit-ibm-provider>=0.7.0
+          pip install --no-cache-dir qiskit-ibm-runtime>=0.10.0
+
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -33,6 +41,16 @@ jobs:
           pip install qiskit-ibm-provider>=0.7.0
           pip install qiskit-ibm-runtime>=0.10.0
           pip install -r requirements.txt
+
+      - name: 🔍 測試 Qiskit 匯入是否正常
+        run: |
+          python -c "import qiskit; print('✅ qiskit 路徑:', qiskit.__file__)"
+
+      - name: 🔍 驗證 Qiskit 模組來源
+        run: python generate_qasm.py --qubits 5 --samples 10 --output for_ibm.qasm
+
+      - name: 🔍 確認 generate_qasm.py 內容正確
+        run: cat generate_qasm.py
 
       - name: 🤖 Train QNN & Generate QASM
         run: python generate_qasm.py --qubits 5 --samples 10 --output for_ibm.qasm

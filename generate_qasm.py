@@ -3,7 +3,7 @@ from qiskit.quantum_info import Statevector
 import numpy as np
 import json
 
-
+print("✅ Qiskit path:", qiskit.__file__)
 class TrainableQNN:
     def __init__(self, num_qubits=5):
         self.num_qubits = num_qubits
