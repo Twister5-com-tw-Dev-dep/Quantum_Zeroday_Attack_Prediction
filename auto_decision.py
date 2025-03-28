@@ -1,53 +1,43 @@
 import json
-import csv
 from collections import Counter
-
+import csv
 
 def analyze_measurements(results_dict):
-    total_shots = sum(results_dict.values())
+    is_float = any(isinstance(v, float) for v in results_dict.values())
+    total = sum(results_dict.values())
+
+    bitstring_stats = []
     count_q0_1 = 0
 
-    rows = []
-
-    for bitstring, freq in results_dict.items():
+    for bitstring, value in results_dict.items():
+        freq = float(value)
         q0 = bitstring[-1]  # 最右邊是 qubit[0]
-        is_zero_day = (q0 == '1')
-        count_q0_1 += freq if is_zero_day else 0
+        if q0 == "1":
+            count_q0_1 += freq
 
-        rows.append({
-            "bitstring": bitstring,
-            "qubit[0]": q0,
-            "判定": "Zero-Day" if is_zero_day else "Known Attack",
-            "次數": freq
-        })
+        bitstring_stats.append((bitstring, freq, q0, "Zero-Day" if q0 == "1" else "Known"))
 
-    prob_q0_1 = count_q0_1 / total_shots
+    prob_q0_1 = count_q0_1 / total
     attack_type = "Zero-Day" if prob_q0_1 >= 0.5 else "Known Attack"
 
-    # 標準輸出
-    print(f"\n📊 分析結果：")
+    # Print summary
+    print(f"\n📊 測量總次數（或總機率和）: {total:.2f}")
     print(f"P(qubit[0] = 1) = {prob_q0_1:.4f}")
-    print(f"📈 判定結果：{attack_type}")
+    print(f"📈 最終判定：{attack_type}")
 
-    # summary.txt for human
-    with open("summary.txt", "w") as f:
-        f.write("📊 分析結果：\n")
-        f.write(f"P(qubit[0] = 1) = {prob_q0_1:.4f}\n")
-        f.write(f"📈 判定結果：{attack_type}\n")
+    # Save markdown summary
+    with open("summary.md", "w") as f_md:
+        f_md.write("### Summary of IBM Quantum Result\n\n")
+        f_md.write(f"- Total shots: {total:.2f}\n")
+        f_md.write(f"- P(qubit[0] = 1): `{prob_q0_1:.4f}`\n")
+        f_md.write(f"- Final Decision: **{attack_type}**\n")
 
-    # summary.md for markdown report
-    with open("summary.md", "w") as f:
-        f.write("## 🧠 Zero-Day Attack Analysis Report\n\n")
-        f.write(f"- **P(qubit[0] = 1)**: `{prob_q0_1:.4f}`\n")
-        f.write(f"- **判定結果**: `{attack_type}`\n")
-        f.write(f"- **總測量次數**: `{total_shots}`\n")
-
-    # CSV 表格輸出 bitstring 頻率統計
-    with open("bitstring_stats.csv", "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["bitstring", "qubit[0]", "判定", "次數"])
-        writer.writeheader()
-        writer.writerows(rows)
-
+    # Save CSV
+    with open("bitstring_stats.csv", "w", newline="") as f_csv:
+        writer = csv.writer(f_csv)
+        writer.writerow(["Bitstring", "Freq/Prob", "Qubit[0]", "Class"])
+        for row in bitstring_stats:
+            writer.writerow(row)
 
 if __name__ == "__main__":
     with open("ibm_result.json", "r") as f:
