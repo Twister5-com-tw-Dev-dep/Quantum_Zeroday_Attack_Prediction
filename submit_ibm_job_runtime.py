@@ -11,8 +11,11 @@ def submit_job_runtime(qasm_file: str, token: str, backend_name="ibm_brisbane"):
         qasm_str = f.read()
     circuit = QuantumCircuit.from_qasm_str(qasm_str)
 
+    # 驗證目前帳號是連到哪個 channel
+    print(service.channel)
+
     # 登入 IBM Runtime
-    service = QiskitRuntimeService(channel="ibm_cloud", token=token)
+    service = QiskitRuntimeService(channel="ibm_quantum", token=token)
     print("🧠 可用後端：", [b.name for b in service.backends()])
 
     # 指定 backend
