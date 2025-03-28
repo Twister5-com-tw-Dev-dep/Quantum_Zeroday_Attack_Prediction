@@ -2,7 +2,7 @@ name: 01-IBM-Runtime-Quantum-Pipeline
 
 on:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "0 4 * * *" # 每天 UTC 04:00（台北中午 12:00）
   workflow_dispatch:
 
 jobs:
@@ -12,35 +12,48 @@ jobs:
       IBMQ_TOKEN: ${{ secrets.IBMQ_TOKEN }}
 
     steps:
-      - name: 01 📥 Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-      - name: 02 🐍 Setup Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: 03 🧹 安裝 Qiskit 與依賴
+      - name: 📦 Install Qiskit & dependencies
         run: |
-          pip uninstall -y qiskit qiskit-terra qiskit-aer qiskit-ibm-provider qiskit-ibm-runtime || true
           pip install --upgrade pip
-          pip install qiskit==0.44.1 qiskit-aer qiskit-ibm-provider>=0.7.0 qiskit-ibm-runtime>=0.10.0
+          pip install qiskit==0.44.1 qiskit-aer
+          pip install qiskit-ibm-runtime>=0.12.0
           pip install -r requirements.txt
 
-      - name: 04 🔍 驗證 Qiskit 匯入與版本
+      - name: 🤖 Generate QASM
+        run: python generate_qasm.py --qubits 5 --samples 10 --output for_ibm.qasm
+
+      - name: 🚀 Submit QASM to IBM Runtime
         run: |
-          python -c "import qiskit; print('✅ Qiskit path:', qiskit.__file__); print('✅ Qiskit version:', qiskit.__version__)"
+          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_submit.py
+          cat submit_ibm_job_runtime.py >> patch_submit.py
+          python patch_submit.py for_ibm.qasm
 
-      - name: 05 🧠 執行完整流程（本地 Shell）
-        run: bash run_ibm_pipeline.sh
+      - name: ⏳ Wait for Result
+        run: sleep 30
 
-      - name: 06 💾 上傳分析結果
+      - name: 📥 Fetch IBM Result
+        run: |
+          JOB_ID=$(cat job_id.txt)
+          echo "import os; os.environ['IBMQ_TOKEN'] = '${IBMQ_TOKEN}'" > patch_fetch.py
+          cat fetch_result_runtime.py >> patch_fetch.py
+          python patch_fetch.py "$JOB_ID"
+
+      - name: 🧠 Analyze & Save Summary
+        run: python auto_decision.py > summary.txt
+
+      - name: 💾 Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: runtime-analysis-results
           path: |
-            job_id.txt
-            for_ibm.qasm
             ibm_result.json
             summary.txt
             summary.md

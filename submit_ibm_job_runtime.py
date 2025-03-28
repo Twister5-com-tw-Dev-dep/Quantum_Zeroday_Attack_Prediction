@@ -1,22 +1,25 @@
+# submit_ibm_job_runtime.py
+
 import sys
 import json
 import os
 from qiskit import QuantumCircuit
-from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
+from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Options
 
 def submit_job_runtime(qasm_file: str, token: str, backend_name="ibm_brisbane"):
     with open(qasm_file, "r") as f:
         qasm_str = f.read()
     circuit = QuantumCircuit.from_qasm_str(qasm_str)
 
-    # IBM Runtime 登入
-    service = QiskitRuntimeService(channel="ibm_quantum", token=token)
-    backend = service.backend(backend_name)
-    # 🧠 確認後端連線成功
+    # 登入 IBM Runtime
+    service = QiskitRuntimeService(channel="ibm_cloud", token=token)
     print("🧠 可用後端：", [b.name for b in service.backends()])
 
-    # 使用 Sampler primitive 執行
-    sampler = Sampler(service=service, backend=backend)
+    # 指定 backend
+    options = Options()
+    options.backend = backend_name
+
+    sampler = Sampler(options=options, service=service)
     job = sampler.run(circuits=[circuit])
     job_id = job.job_id()
 
