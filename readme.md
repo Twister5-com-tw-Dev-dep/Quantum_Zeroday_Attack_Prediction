@@ -4,273 +4,163 @@
 
 - https://youtu.be/GAqObPqVGdQ
 
-## 📌 專案說明
+📌 專案介紹
 
-本專案使用量子計算與量子神經網絡（Quantum Neural Network, QNN）技術，分析並預測網路安全攻擊模式，尤其專注於識別零日（Zero-day）攻擊行為。
+本專案結合量子運算與量子神經網路（Quantum Neural Network, QNN）來進行網路安全分析，目標為精準識別零日攻擊（Zero-Day Attack）。
 
-## 📂 專案結構
+專案分為以下核心模組：
 
----
+使用 OpenQASM 定義量子電路結構
 
-version 2.0
+自動產生並提交 QASM 至 IBM Quantum 真實或模擬後端
+
+擷取測量結果並進行 qubit[0] 分析
+
+分類攻擊為 Known Attack 或 Zero-Day Attack
+
+支援 GitHub Actions 排程每日自動提交與分析
+
+🧠 核心概念
+
+🧬 QNN 架構說明
+
+Qubits 數量：使用 5 個 qubit 來建立電路
+
+電路階段設計：
+
+RX 閘：編碼輸入攻擊特徵（模擬生成）
+
+RY 閘：引入隨機/訓練參數（模擬權重）
+
+CNOT：建立量子糾纏（全環狀連接）
+
+測量 qubit[0]：根據其 P(|1⟩) 作為攻擊分類依據
+
+🧪 分類邏輯
+
+若 qubit[0] 測量結果為 1（或 P(|1⟩) 趨近 1）→ 判定為 Zero-Day
+
+若 qubit[0] 為 0（或 P(|1⟩) 趨近 0）→ 判定為 Known Attack
+
+📂 專案目錄結構（Version 2.0）
+
 Quantum_Zeroday_Attack_Prediction/
 ├── .github/
 │ └── workflows/
-│ └── ibm_pipeline.yml # GitHub Actions 自動化流程
-├── auto_decision.py # qubit[0] 機率分析與攻擊判斷
-├── fetch_result.py # 根據 job ID 拉取 IBM 執行結果
-├── for_ibm.qasm # 每次自動產生的 QASM 檔案
-├── generate_qasm.py # 自動隨機產生 RX + RY + Entangle 電路
-├── install.sh # 本地安裝腳本，建立虛擬環境並安裝依賴
-├── job_id.txt # 儲存 IBM 提交任務的 job ID
-├── ibm_result.json # 儲存 histogram 結果 JSON
-├── main.py # 模型核心主程式（載入 QASM 並做模擬）
-├── Makefile # 快速指令列工具
-├── requirements.txt # 所需 Python 套件列表
-├── run_ibm_pipeline.sh # 一鍵產生 + 提交 + 下載 + 分析
-└── submit_ibm_job.py # 上傳 QASM 至 IBM Quantum 並儲存 Job ID
+│ └── ibm_pipeline.yml # GitHub Actions 自動排程任務
+├── auto_decision.py # 根據 qubit[0] 分析 Zero-Day 或 Known
+├── fetch_result.py # 根據 job ID 抓回 IBM 執行結果 JSON
+├── for_ibm.qasm # 每次自動產生的 QASM 電路
+├── generate_qasm.py # 使用 RX+RY+CNOT 建立 QASM 電路結構
+├── install.sh # 建立虛擬環境並安裝依賴
+├── job_id.txt # 暫存 IBM job ID
+├── ibm_result.json # 儲存 IBM 測量結果 (counts)
+├── main.py # 主程式，讀取 QASM 並模擬 statevector 分析
+├── Makefile # 指令列工具：一鍵建構、提交、分析
+├── requirements.txt # Python 依賴列表（Qiskit + NumPy）
+├── run_ibm_pipeline.sh # 本地端一鍵完整流程腳本
+└── submit_ibm_job.py # 上傳 QASM 電路至 IBM Quantum 後端
 
----
+🧩 每個模組說明
 
-| 文件名稱                          | 說明                                                            |
-| --------------------------------- | --------------------------------------------------------------- |
-| `Zero_Day_Attack_Prediction.qasm` | main.py 生成量子電路版本                                        |
-| `for_ibm.qasm`                    | 適用於 IBM Quantum 服務的 QASM 格式電路，可用 api 做 cron job。 |
-| `main.py`                         | 量子神經網絡的核心程式碼，用於訓練與預測攻擊模式。              |
-| `next_phase.py`                   | 下一階段開發計畫的程式碼草稿，包含進階功能規劃。                |
-| `requirements.txt`                | 專案 Python 依賴套件列表。                                      |
+檔案名稱
 
-## 實際測量：
+功能說明
 
-<img width="1280" alt="Screenshot 2025-03-28 at 9 57 53 AM" src="https://github.com/user-attachments/assets/face2e38-d192-4bfe-8fcf-eabfc648db59" />
+generate_qasm.py
 
-<img width="361" alt="Screenshot 2025-03-28 at 12 00 11 PM" src="https://github.com/user-attachments/assets/0afade46-34c7-475e-b11a-a3f3d4580c18" />
+使用隨機 RX + RY gate 產生 QASM 並儲存至 for_ibm.qasm
 
-# IBM Quantum 測量結果分析(上圖）
+submit_ibm_job.py
 
-## 分析方法
+使用 IBM API 將 QASM 電路上傳，並儲存 job ID
 
-- 該 bitstring 的每個 qubit 值（q[6] ~ q[0]）
-  - **qubit[0] 的值（最右邊）** → 是 0 還是 1
-  - 根據 qubit[0] 的值，分類為 **Zero-Day** 或 **Known Attack**
-  - 顯示該結果的出現次數（Frequency）
+fetch_result.py
 
-## ✅ 逐筆分析結果
+根據 job ID 擷取測量結果，輸出 ibm_result.json
 
-| Bitstring | Qubit Values             | Qubit[0] | 判定結果 | 次數 |
-| --------- | ------------------------ | -------- | -------- | ---- |
-| 1000101   | q[6]=1 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 2    |
-| 1000011   | q[6]=1 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 7    |
-| 1000001   | q[6]=1 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 5    |
-| 0111111   | q[6]=0 q[5]=1 ... q[0]=1 | 1        | Zero-Day | 2    |
-| 0111101   | q[6]=0 q[5]=1 ... q[0]=1 | 1        | Zero-Day | 3    |
-| 0111011   | q[6]=0 q[5]=1 ... q[0]=1 | 1        | Zero-Day | 13   |
-| 0111000   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 10   |
-| 0110110   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 5    |
-| 0110100   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 4    |
-| 0110001   | q[6]=0 q[5]=1 ... q[0]=1 | 1        | Zero-Day | 4    |
-| 0101111   | q[6]=0 q[5]=1 ... q[0]=1 | 1        | Zero-Day | 2    |
-| 0101100   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 3    |
-| 0101010   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 7    |
-| 0101000   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 6    |
-| 0100110   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 1    |
-| 0100010   | q[6]=0 q[5]=1 ... q[0]=0 | 0        | Known    | 3    |
-| 0011111   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 8    |
-| 0011101   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 5    |
-| 0011011   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 3    |
-| 0011001   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 7    |
-| 0010111   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 14   |
-| 0010101   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 9    |
-| 0010011   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 5    |
-| 0010001   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 2    |
-| 0001111   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 2    |
-| 0001101   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 11   |
-| 0001011   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 5    |
-| 0001001   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 2    |
-| 0000111   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 3    |
-| 0000011   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 6    |
-| 0000001   | q[6]=0 q[5]=0 ... q[0]=1 | 1        | Zero-Day | 6    |
-| 0000000   | q[6]=0 q[5]=0 ... q[0]=0 | 0        | Known    | 5    |
+auto_decision.py
 
-## 🔢 Qubit[0] 結果分佈統計
+根據 qubit[0] 為 1 的比率，自動判斷攻擊類型
 
-| Qubit[0] | 意義         | 出現次數 |
-| -------- | ------------ | -------- |
-| 1        | Zero-Day     | 165      |
-| 0        | Known Attack | 49       |
-| **總計** |              | **214**  |
+run_ibm_pipeline.sh
 
-## 最終模型判斷
+本地端自動化整合：產生 → 上傳 → 擷取 → 分析
 
-- **P(|1⟩) = 0.771** → 高於 0.5
-- **推斷結果**：**「Zero-Day 攻擊」🚨**
+Makefile
 
-### 環境建置
+定義 make run-all 等快捷操作
 
-## 🚀 快速開始
+main.py
 
-```bash
+載入 .qasm 並以 statevector 模擬攻擊預測
+
+🚀 使用方式
+
+🔧 安裝環境（建議使用 venv）
+
+bash install.sh
+source .venv/bin/activate
+
+或手動：
+
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 運行程式
+▶️ 執行一鍵流程（本地）
 
-```bash
-python main.py
-```
+bash run_ibm_pipeline.sh
 
-程式運行後，會在終端機輸出：
+或：
 
-- 目前台北時間
-- 預測的攻擊模式結果
-- 訓練後最終參數
+make run-all
 
-同時，量子電路會保存到以下 QASM 文件：
+⚙️ GitHub Actions 自動執行
 
-- `Zero_Day_Attack_Prediction.qasm`
+新增 GitHub Repository Secret 名為 IBMQ_TOKEN
 
-## 🔮 量子電路設計
+系統會每天自動提交電路並分析結果
 
-此量子電路旨在透過量子狀態編碼安全攻擊的特徵，進而識別攻擊模式：
+使用 workflow_dispatch 可手動觸發
 
-- **量子位元數**：5 量子位元 (Qubits)
-- **量子閘設計**：
-  - **初始狀態編碼**：`RX` 閘，編碼攻擊特徵。
-  - **參數化旋轉**：`RY` 閘，透過訓練學習參數。
-  - **量子糾纏**：`CNOT` 閘，建立特徵交互作用。
-  - **狀態反轉**：`X` 閘，調整最終狀態以利測量。
-- **測量策略**：
-  - 測量第 0 個量子位元，根據其量子態機率判定攻擊是否屬於零日攻擊：
-    - 若 `P(|1⟩)` 接近 `1`，則可能為零日攻擊。
-    - 若 `P(|1⟩)` 接近 `0`，則為已知攻擊。
+📊 IBM Quantum 結果分析邏輯
 
-## 📋 使用特徵說明
+IBM 測量回傳的 histogram 結果是一組 bitstring: frequency，例如：
 
-| 特徵名稱   | 說明            | 範例                |
-| ---------- | --------------- | ------------------- |
-| 攻擊時間   | timestamp       | `2025-03-14T03:05Z` |
-| 來源 IP    | source_ip       | `238.54.8.212`      |
-| 攻擊類型   | attack_type     | `SQL Injection`     |
-| 是否被攔截 | blocked         | `true` 或 `false`   |
-| 攔截方式   | blocking_method | `IP Blacklisting`   |
+"0010111": 14,
+"0000000": 5,
 
-## 🧩 下一階段規劃 (`next_phase.py`)
+解釋邏輯：
 
-### 📌 特徵擴充（7 維度）
+每個 bitstring 長度為 7，代表 7 個 qubit 測量值（q[6] 為左、q[0] 為右）
 
-更豐富的特徵向量，提供精準的零日攻擊偵測：
+我們只看最右邊（q[0]）的值：
 
-- 攻擊類型（SQL Injection, DDoS, XSS 等）
-- 來源 IP
-- 時間戳記
-- 地理位置
-- 攻擊模式（Flooding, Sniffing 等）
-- 歷史發生頻率
-- 受害端類型（API, Web, Network 等）
-- gate 修正
+1 → 推論為 Zero-Day 攻擊
 
-### 📌 參數持久化儲存
+0 → 推論為 Known Attack
 
-- 採用 JSON 格式儲存訓練完成的模型參數。
-- 程式啟動時自動讀取歷史參數，加速訓練流程。
+使用 auto_decision.py 將自動：
 
-### 📌 量子糾纏與非線性互動增強
+統計 qubit[0] 為 1 的機率
 
-- 使用 `CNOT` 與額外的旋轉門 (`RY`、`RZ`) 強化量子糾纏效果，提升模型的非線性分類能力。
+輸出 P(|1⟩) = 0.77 這類結果
 
-### 📌 真實攻擊場景應用
+自動做出分類判斷
 
-- 使用真實的網路攻擊數據替換現有模擬資料。
-- 模型輸出可整合至現有的防火牆及入侵偵測系統（IDS）中，協助安全管理決策。
+📈 擴充功能與規劃建議
 
-# 🛠️ 功能強化方向與建議
+✅ 已實作
 
-## 必須：
+🔄 建議功能
 
-1. openQASM 改善/cd cron to IBM
+📖 參考資料
 
-## 已完成功能
+Qiskit 官方文件
 
-1. ✅ **自動判斷攻擊類型**
+OpenQASM 2.0 規範
 
-   - 根據 `qubit[0]` 測量結果直接輸出：
-     - `1` → **Zero-Day Attack**
-     - `0` → **Known Attack**
-   - 支援統計 `P(|1⟩)` 機率
-   - 可根據閾值（例如 0.5）決定模型輸出
-
-2. 📊 **完整測量結果分析**
-   - 對每個測量 bitstring 進行：
-     - 拆解 qubit 狀態
-     - 判定攻擊類型
-     - 顯示出現次數
-   - 統整：
-     - `qubit[0]` 為 1 和 0 的次數
-     - 機率分佈
-     - 最終推論結果
-
-## 🔄 後續可擴充功能建議
-
-3. 🔍 **支援多 qubit 輸出分析（多分類模型）**
-
-   - 目前僅使用 `qubit[0]` 做二元分類（Zero-Day / Known）
-   - 可擴充為：
-     - `qubit[0–1]` → 4 類型分類（例如 DDoS、XSS、SQLi、未知）
-     - 使用 qubit 向量進行 **soft decision**
-
-4. 🧠 **將測量結果作為輸出向量輸入傳統機器學習模型**
-
-   - 將多次測量結果的統計分佈（Histogram）視為特徵向量
-   - 使用經典 ML 模型（例如 SVM、RandomForest）進一步分類強化
-
-5. 📂 **輸出格式自動化**
-
-   - 自動生成：
-     - `summary.txt` / `report.csv`
-     - 內容包含每筆 bitstring、次數、分類、`P(|1⟩)`
-   - 可整合 log 系統，記錄時間戳與模型參數版本
-
-6. 📈 **視覺化結果 Dashboard**
-
-   - 使用 `matplotlib` 或 `Plotly` 生成：
-     - `qubit[0]` 機率曲線
-     - bitstring 出現次數直方圖
-     - 攻擊類型比例圖
-   - 可選擇 CLI 或 Web UI 呈現
-
-7. 🧪 **改進訓練機制**
-
-   - 增加：
-     - 參數微調工具（grid search, adaptive rate）
-     - 損失函數視覺化
-     - 多筆輸入 batch 處理訓練（取代逐筆方式）
-
-8. 🔐 **真實攻擊資料整合**
-
-   - 將模擬資料替換為實際 **IDS logs / threat feeds**
-   - 支援轉換來源格式：CSV、JSON、pcap
-   - 將攻擊事件特徵對應至 RX 角度映射表
-
-9. 📌 **前處理與特徵工程模組化**
-   - 將目前的 `input_data`（`np.random.rand()`）改為：
-     - 經過處理的「攻擊事件特徵向量」
-     - 加入 normalization、embedding（例如 IP → Geo → Angle）
-
-## 🔄 更新優先順序建議
-
-| 優先等級  | 功能項目                     |
-| --------- | ---------------------------- |
-| ⭐ **高** | openQASM 改善/cd cron to IBM |
-| ⭐ **高** | 自動分類輸出 / 報告輸出      |
-| ⭐ **高** | `qubit[0]` 統計機率與分類    |
-| 🌟 **中** | 將測量結果餵給傳統 ML 模型   |
-| 🌟 **中** | 多 qubit 分類擴展            |
-| ✨ **中** | 真實攻擊資料特徵映射         |
-| 💡 **低** | 圖形化 UI、Web dashboard     |
-
-## 📖 參考資料
-
-- [Qiskit 官方文件](https://qiskit.org/documentation/)
-- [QASM 2.0 規範](https://arxiv.org/abs/1707.03429)
+IBM Quantum Experience
 
 © 2025 Quantum Cybersecurity Analysis Project
