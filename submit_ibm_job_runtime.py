@@ -1,8 +1,7 @@
 import sys
-import json
 import os
 from qiskit import QuantumCircuit
-from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
+from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session
 
 def submit_job_runtime(qasm_file: str, token: str):
     with open(qasm_file, "r") as f:
@@ -14,14 +13,15 @@ def submit_job_runtime(qasm_file: str, token: str):
     print(f"✅ 成功登入 Qiskit Runtime, channel: {service.channel}")
     print("🧠 可用後端：", [b.name for b in service.backends()])
 
-    # ✅ 使用 Sampler V2 初始化（不傳 backend）
-    sampler = Sampler(session=service)
-    job = sampler.run([circuit])
-    job_id = job.job_id()
+    # ✅ 使用 Session 包裹 Sampler（V2 Primitives 格式）
+    with Session(service=service) as session:
+        sampler = Sampler(session=session)
+        job = sampler.run([circuit])
+        job_id = job.job_id()
+        print(f"✅ Runtime Job submitted! Job ID: {job_id}")
 
-    print(f"✅ Runtime Job submitted! Job ID: {job_id}")
-    with open("job_id.txt", "w") as f:
-        f.write(job_id)
+        with open("job_id.txt", "w") as f:
+            f.write(job_id)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
