@@ -20,11 +20,12 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: 03 🧹 安裝 Qiskit 與依賴
+      - name: 03 🧹 安裝 Qiskit 與依賴 + Remove all Qiskit packages & install Qiskit 1.x cleanly
         run: |
           pip uninstall -y qiskit qiskit-terra qiskit-aer qiskit-ibm-provider qiskit-ibm-runtime || true
+          pip list | grep qiskit || true  # 檢查是否有殘留
           pip install --upgrade pip
-          pip install qiskit==0.44.1 qiskit-aer qiskit-ibm-provider>=0.7.0 qiskit-ibm-runtime>=0.10.0
+          pip install "qiskit==1.0.2" "qiskit-aer==0.14.1" "qiskit-ibm-provider>=0.11.0" "qiskit-ibm-runtime>=0.21.0"
           pip install -r requirements.txt
 
       - name: 04 🔍 驗證 Qiskit 匯入與版本
