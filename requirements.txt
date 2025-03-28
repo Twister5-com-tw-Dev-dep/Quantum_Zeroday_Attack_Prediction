@@ -5,7 +5,7 @@ qiskit-aer>=0.12.2
 
 # IBM Quantum Runtime support
 qiskit-ibm-provider>=0.7.0
-qiskit-ibm-runtime>=0.10.0  # ✅ 提交與拉取 job via Runtime Primitives
+qiskit-ibm-runtime>=0.21.0  # 支援 SamplerV2 與 /sessions endpoint ->  提交與拉取 job via Runtime Primitives
 
 # Machine learning and data processing
 numpy>=1.21.0

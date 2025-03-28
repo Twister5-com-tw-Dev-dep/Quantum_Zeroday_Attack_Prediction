@@ -1,24 +1,23 @@
 import sys
 import os
 from qiskit import QuantumCircuit
-from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
+from qiskit_ibm_runtime import QiskitRuntimeService, Session, SamplerV2
 
 def submit_job_runtime(qasm_file: str, token: str, backend_name="ibm_brisbane"):
     with open(qasm_file, "r") as f:
         qasm_str = f.read()
     circuit = QuantumCircuit.from_qasm_str(qasm_str)
 
-    # 登入 Qiskit Runtime（IBM Quantum channel）
+    # ✅ 登入 Qiskit Runtime（新 API）
     service = QiskitRuntimeService(channel="ibm_quantum", token=token)
     print("✅ 成功登入 Qiskit Runtime, channel:", service.channel)
     print("🧠 可用後端：", [b.name for b in service.backends()])
-
     backend = service.backend(backend_name)
 
-    # 使用 Primitives V2：Session + Sampler
+    # ✅ 使用新版 Primitives V2 API：Session + SamplerV2 + session.run()
     with Session(service=service, backend=backend) as session:
-        sampler = Sampler(session=session)
-        job = sampler.run(circuits=[circuit])
+        sampler = SamplerV2()
+        job = session.run(sampler, circuits=[circuit])
         job_id = job.job_id()
 
     print(f"✅ Runtime Job submitted! Job ID: {job_id}")
