@@ -156,6 +156,80 @@ python main.py
 - 使用真實的網路攻擊數據替換現有模擬資料。
 - 模型輸出可整合至現有的防火牆及入侵偵測系統（IDS）中，協助安全管理決策。
 
+# 🛠️ 功能強化方向與建議
+
+## 必須：
+1. openQASM改善/cd cron to IBM 
+
+## 已完成功能
+1. ✅ **自動判斷攻擊類型**
+   - 根據 `qubit[0]` 測量結果直接輸出：
+     - `1` → **Zero-Day Attack**
+     - `0` → **Known Attack**
+   - 支援統計 `P(|1⟩)` 機率
+   - 可根據閾值（例如 0.5）決定模型輸出
+
+2. 📊 **完整測量結果分析**
+   - 對每個測量 bitstring 進行：
+     - 拆解 qubit 狀態
+     - 判定攻擊類型
+     - 顯示出現次數
+   - 統整：
+     - `qubit[0]` 為 1 和 0 的次數
+     - 機率分佈
+     - 最終推論結果
+
+## 🔄 後續可擴充功能建議
+3. 🔍 **支援多 qubit 輸出分析（多分類模型）**
+   - 目前僅使用 `qubit[0]` 做二元分類（Zero-Day / Known）
+   - 可擴充為：
+     - `qubit[0–1]` → 4 類型分類（例如 DDoS、XSS、SQLi、未知）
+     - 使用 qubit 向量進行 **soft decision**
+
+4. 🧠 **將測量結果作為輸出向量輸入傳統機器學習模型**
+   - 將多次測量結果的統計分佈（Histogram）視為特徵向量
+   - 使用經典 ML 模型（例如 SVM、RandomForest）進一步分類強化
+
+5. 📂 **輸出格式自動化**
+   - 自動生成：
+     - `summary.txt` / `report.csv`
+     - 內容包含每筆 bitstring、次數、分類、`P(|1⟩)`
+   - 可整合 log 系統，記錄時間戳與模型參數版本
+
+6. 📈 **視覺化結果 Dashboard**
+   - 使用 `matplotlib` 或 `Plotly` 生成：
+     - `qubit[0]` 機率曲線
+     - bitstring 出現次數直方圖
+     - 攻擊類型比例圖
+   - 可選擇 CLI 或 Web UI 呈現
+
+7. 🧪 **改進訓練機制**
+   - 增加：
+     - 參數微調工具（grid search, adaptive rate）
+     - 損失函數視覺化
+     - 多筆輸入 batch 處理訓練（取代逐筆方式）
+
+8. 🔐 **真實攻擊資料整合**
+   - 將模擬資料替換為實際 **IDS logs / threat feeds**
+   - 支援轉換來源格式：CSV、JSON、pcap
+   - 將攻擊事件特徵對應至 RX 角度映射表
+
+9. 📌 **前處理與特徵工程模組化**
+   - 將目前的 `input_data`（`np.random.rand()`）改為：
+     - 經過處理的「攻擊事件特徵向量」
+     - 加入 normalization、embedding（例如 IP → Geo → Angle）
+
+## 🔄 更新優先順序建議
+| 優先等級 | 功能項目                     |
+|----------|------------------------------|
+| ⭐ **高** | openQASM改善/cd cron to IBM      |
+| ⭐ **高** | 自動分類輸出 / 報告輸出      |
+| ⭐ **高** | `qubit[0]` 統計機率與分類    |
+| 🌟 **中** | 將測量結果餵給傳統 ML 模型    |
+| 🌟 **中** | 多 qubit 分類擴展            |
+| ✨ **中** | 真實攻擊資料特徵映射          |
+| 💡 **低** | 圖形化 UI、Web dashboard      |
+
 ## 📖 參考資料
 
 - [Qiskit 官方文件](https://qiskit.org/documentation/)
