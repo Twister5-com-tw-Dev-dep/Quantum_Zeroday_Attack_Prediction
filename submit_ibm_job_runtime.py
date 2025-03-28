@@ -1,34 +1,27 @@
 import sys
+import json
 import os
 from qiskit import QuantumCircuit
-from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session
+from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
 
-def submit_job_runtime(qasm_file: str, token: str, backend_name="ibm_brisbane"):
+def submit_job_runtime(qasm_file: str, token: str):
     with open(qasm_file, "r") as f:
         qasm_str = f.read()
     circuit = QuantumCircuit.from_qasm_str(qasm_str)
 
-    try:
-        service = QiskitRuntimeService(channel="ibm_quantum", token=token)
-        print(f"✅ 成功登入 Qiskit Runtime, channel: {service.channel}")
-        print("🧠 可用後端：", [b.name for b in service.backends()])
-    except Exception as e:
-        print("❌ 無法建立 QiskitRuntimeService：", e)
-        sys.exit(1)
+    # 登入 IBM Runtime
+    service = QiskitRuntimeService(channel="ibm_quantum", token=token)
+    print(f"✅ 成功登入 Qiskit Runtime, channel: {service.channel}")
+    print("🧠 可用後端：", [b.name for b in service.backends()])
 
-    try:
-        backend = service.backend(backend_name)
-        # 🆕 使用 Session + Sampler（Primitives v2）
-        with Session(service=service, backend=backend) as session:
-            sampler = Sampler(session=session)
-            job = sampler.run(circuits=[circuit])
-            job_id = job.job_id()
-            print(f"✅ Runtime Job submitted! Job ID: {job_id}")
-            with open("job_id.txt", "w") as f:
-                f.write(job_id)
-    except Exception as e:
-        print("❌ 提交任務失敗：", e)
-        sys.exit(1)
+    # ✅ 使用 Sampler V2 初始化（不傳 backend）
+    sampler = Sampler(session=service)
+    job = sampler.run([circuit])
+    job_id = job.job_id()
+
+    print(f"✅ Runtime Job submitted! Job ID: {job_id}")
+    with open("job_id.txt", "w") as f:
+        f.write(job_id)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
